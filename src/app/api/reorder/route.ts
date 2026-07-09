@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const collection = body.collection || '';
   if (!VALID.includes(collection)) return bad('Unknown collection');
   if (!Array.isArray(body.ids)) return bad('ids must be an array');
-  const okReorder = reorder(collection, body.ids.map(Number).filter(Boolean));
+  const okReorder = await reorder(collection, body.ids.map(Number).filter(Boolean));
   if (!okReorder) return bad('Reorder failed');
   return ok({ reordered: true });
 }

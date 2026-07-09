@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     typeof body.tags === 'string'
       ? body.tags
       : JSON.stringify(Array.isArray(body.tags) ? body.tags : []);
-  const id = createProject({
+  const id = await createProject({
     slug: String(body.slug ?? '').trim() || slugify(String(body.title)),
     title: String(body.title),
     tags,
@@ -37,5 +37,5 @@ export async function POST(req: Request) {
     year: String(body.year ?? ''),
     visible: body.visible !== false,
   });
-  return ok({ id, projects: getProjects(true) });
+  return ok({ id, projects: await getProjects(true) });
 }

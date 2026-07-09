@@ -18,7 +18,7 @@ export async function PUT(
   if (!id) return bad('Missing id');
   const body = await readJson<Record<string, unknown>>(req);
   if (!body) return bad('Invalid JSON');
-  updateContactLink({
+  await updateContactLink({
     id,
     label: String(body.label ?? ''),
     value: String(body.value ?? ''),
@@ -26,7 +26,7 @@ export async function PUT(
     visible: body.visible !== false,
     order: Number(body.order) || 0,
   });
-  return ok({ items: getContactLinks(true) });
+  return ok({ items: await getContactLinks(true) });
 }
 
 export async function DELETE(
@@ -37,6 +37,6 @@ export async function DELETE(
   if (guard) return guard;
   const id = Number((await params).id);
   if (!id) return bad('Missing id');
-  deleteContactLink(id);
-  return ok({ items: getContactLinks(true) });
+  await deleteContactLink(id);
+  return ok({ items: await getContactLinks(true) });
 }

@@ -21,9 +21,5 @@ yarn-error.log*
 .env
 .env*.local
 
-# sqlite database (local content store)
-data/
-
-# uploaded images
-public/uploads/*
-!public/uploads/.gitkeep
+# vercel
+.vercel

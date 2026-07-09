@@ -13,6 +13,6 @@ export async function PUT(req: Request) {
   const obj: Record<string, unknown> = {};
   if ('m1' in body) obj.m1 = String(body.m1 ?? '');
   if ('m2' in body) obj.m2 = String(body.m2 ?? '');
-  updateMarquee(obj);
+  await updateMarquee(obj);
   return ok({ marquee: obj });
 }

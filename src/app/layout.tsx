@@ -4,16 +4,15 @@ import { getSite, getHero } from '@/lib/content';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
-export function generateMetadata(): Metadata {
+export async function generateMetadata(): Promise<Metadata> {
   let name = 'Portfolio';
   let tagline = 'Founder · Builder · Creator';
   try {
-    const site = getSite();
-    const hero = getHero();
+    const [site, hero] = await Promise.all([getSite(), getHero()]);
     name = site.name || name;
     tagline = hero.subtitle || site.tagline || tagline;
   } catch {
-    // DB may not be ready during some build steps — fall back to defaults.
+    // Supabase env may not be present during some build steps — fall back.
   }
   const title = `${name} — ${tagline.slice(0, 60)}`;
   return {

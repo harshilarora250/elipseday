@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getProjectBySlug, getProjects, getSite } from '@/lib/content';
+import { getProjectBySlug, getSite } from '@/lib/content';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,9 +20,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = await getProjectBySlug(slug);
   if (!project) return { title: 'Project not found' };
-  const site = getSite();
+  const site = await getSite();
   return {
     title: `${project.title} — ${site.name}`,
     description: project.description.slice(0, 160),
@@ -40,7 +40,7 @@ export default async function ProjectDetail({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const project = getProjectBySlug(slug);
+  const project = await getProjectBySlug(slug);
   if (!project || !project.visible) notFound();
 
   const tags = parseTags(project.tags);
@@ -87,10 +87,8 @@ export default async function ProjectDetail({
   );
 }
 
+// Pages are force-dynamic and content lives in Supabase (needs runtime env),
+// so we don't prerender any slugs at build time — they render on demand.
 export function generateStaticParams() {
-  try {
-    return getProjects(true).map((p) => ({ slug: p.slug }));
-  } catch {
-    return [];
-  }
+  return [];
 }

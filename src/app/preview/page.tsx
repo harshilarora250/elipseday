@@ -16,8 +16,8 @@ export async function generateMetadata() {
   return { robots: { index: false, follow: false } };
 }
 
-export default function Preview() {
-  const data = getPublicData();
+export default async function Preview() {
+  const data = await getPublicData();
   const metaItems = [
     { label: 'Based in', value: 'The Internet' },
     { label: 'Currently', value: data.currently[0]?.text || '—' },

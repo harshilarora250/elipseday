@@ -10,11 +10,11 @@ export async function POST(req: Request) {
   const body = await readJson<Record<string, unknown>>(req);
   if (!body) return bad('Invalid JSON');
   if (!String(body.title ?? '').trim()) return bad('Title is required');
-  const id = createAchievement({
+  const id = await createAchievement({
     year: String(body.year ?? ''),
     title: String(body.title),
     description: String(body.description ?? ''),
     visible: body.visible !== false,
   });
-  return ok({ id, items: getAchievements(true) });
+  return ok({ id, items: await getAchievements(true) });
 }

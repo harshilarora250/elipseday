@@ -22,7 +22,7 @@ export async function PUT(
     typeof body.tags === 'string'
       ? body.tags
       : JSON.stringify(Array.isArray(body.tags) ? body.tags : []);
-  updateProject({
+  await updateProject({
     id,
     slug: String(body.slug ?? ''),
     title: String(body.title ?? ''),
@@ -34,7 +34,7 @@ export async function PUT(
     visible: body.visible !== false,
     order: Number(body.order) || 0,
   });
-  return ok({ projects: getProjects(true) });
+  return ok({ projects: await getProjects(true) });
 }
 
 export async function DELETE(
@@ -45,6 +45,6 @@ export async function DELETE(
   if (guard) return guard;
   const id = Number((await params).id);
   if (!id) return bad('Missing id');
-  deleteProject(id);
-  return ok({ projects: getProjects(true) });
+  await deleteProject(id);
+  return ok({ projects: await getProjects(true) });
 }

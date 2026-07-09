@@ -18,6 +18,6 @@ export async function PUT(req: Request) {
   for (const k of allowed) {
     if (k in body) obj[k] = String(body[k] ?? '');
   }
-  updateContact(obj);
+  await updateContact(obj);
   return ok({ contact: obj });
 }

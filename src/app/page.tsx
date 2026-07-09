@@ -21,8 +21,8 @@ const NAV_LINKS = [
   { label: 'Contact', href: '#contact' },
 ];
 
-export default function Home() {
-  const data = getPublicData();
+export default async function Home() {
+  const data = await getPublicData();
 
   const metaItems = [
     { label: 'Based in', value: 'The Internet' },

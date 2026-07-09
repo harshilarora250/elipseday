@@ -15,6 +15,6 @@ export async function PUT(req: Request) {
   for (const k of allowed) {
     if (k in body) obj[k] = String(body[k] ?? '');
   }
-  updateSite(obj);
+  await updateSite(obj);
   return ok({ site: obj });
 }

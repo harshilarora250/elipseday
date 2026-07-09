@@ -1,4 +1,4 @@
-import { db } from './db';
+import { getSupabase } from './db';
 import type {
   Site,
   Hero,
@@ -14,101 +14,211 @@ import type {
 } from './types';
 
 // ---------- helpers ----------
-const jp = <T>(s: string | null, fallback: T): T => {
-  if (!s) return fallback;
-  try {
-    return JSON.parse(s) as T;
-  } catch {
-    return fallback;
-  }
-};
-
 const num = (v: unknown, d = 0): number => {
   const n = Number(v);
   return Number.isFinite(n) ? n : d;
 };
-
 const str = (v: unknown, d = ''): string => (v == null ? d : String(v));
-const boolToNum = (v: unknown): number => (v ? 1 : 0);
+const boolDb = (v: unknown): boolean => (v === undefined || v === null ? true : !!v);
+
+// camelCase (TS) -> snake_case (Postgres column) for update payloads.
+const toSnake = (o: Record<string, unknown>): Record<string, unknown> => {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(o)) {
+    out[k.replace(/[A-Z]/g, (m) => '_' + m.toLowerCase())] = v;
+  }
+  return out;
+};
+
+// ---------- row -> typed object mappers (snake_case -> camelCase) ----------
+const toSite = (r: any): Site => ({
+  id: r.id,
+  name: r.name,
+  tagline: r.tagline,
+  statusText: r.status_text,
+  copyright: r.copyright,
+  navCtaText: r.nav_cta_text,
+});
+const toHero = (r: any): Hero => ({
+  id: r.id,
+  kicker: r.kicker,
+  nameLine1: r.name_line1,
+  nameLine2: r.name_line2,
+  note: r.note,
+  subtitle: r.subtitle,
+  rotatingWords: r.rotating_words,
+  statusText: r.status_text,
+  email: r.email,
+  starImage: r.star_image,
+  floatNote: r.float_note,
+  chips: r.chips,
+});
+const toAbout = (r: any): About => ({
+  id: r.id,
+  kicker: r.kicker,
+  title: r.title,
+  paragraphs: r.paragraphs,
+  accent: r.accent,
+});
+const toContact = (r: any): Contact => ({
+  id: r.id,
+  kicker: r.kicker,
+  headlineBefore: r.headline_before,
+  headlineCircled: r.headline_circled,
+  headlineAfter: r.headline_after,
+  body: r.body,
+  ctaText: r.cta_text,
+  ctaUrl: r.cta_url,
+  email: r.email,
+  copyText: r.copy_text,
+  featuredCtaText: r.featured_cta_text,
+});
+const toStat = (r: any): Stat => ({
+  id: r.id,
+  value: r.value,
+  suffix: r.suffix,
+  label: r.label,
+  visible: !!r.visible,
+});
+const toCurrently = (r: any): CurrentlyItem => ({
+  id: r.id,
+  text: r.text,
+  sub: r.sub,
+  visible: !!r.visible,
+  order: r.display_order ?? 0,
+});
+const toProject = (r: any): Project => ({
+  id: r.id,
+  slug: r.slug,
+  title: r.title,
+  tags: r.tags,
+  description: r.description,
+  image: r.image,
+  link: r.link,
+  year: r.year,
+  visible: !!r.visible,
+  order: r.display_order ?? 0,
+});
+const toAchievement = (r: any): Achievement => ({
+  id: r.id,
+  year: r.year,
+  title: r.title,
+  description: r.description,
+  visible: !!r.visible,
+  order: r.display_order ?? 0,
+});
+const toContentItem = (r: any): ContentItem => ({
+  id: r.id,
+  platform: r.platform,
+  name: r.name,
+  description: r.description,
+  url: r.url,
+  linkText: r.link_text,
+  visible: !!r.visible,
+  order: r.display_order ?? 0,
+});
+const toContactLink = (r: any): ContactLink => ({
+  id: r.id,
+  label: r.label,
+  value: r.value,
+  url: r.url,
+  visible: !!r.visible,
+  order: r.display_order ?? 0,
+});
 
 // ---------- singletons ----------
-export function getSite(): Site {
-  return db.prepare('SELECT * FROM site WHERE id = 1').get() as Site;
+export async function getSite(): Promise<Site> {
+  const { data } = await getSupabase().from('site').select('*').eq('id', 1).maybeSingle();
+  return toSite(data ?? {});
 }
-export function getHero(): Hero {
-  return db.prepare('SELECT * FROM hero WHERE id = 1').get() as Hero;
+export async function getHero(): Promise<Hero> {
+  const { data } = await getSupabase().from('hero').select('*').eq('id', 1).maybeSingle();
+  return toHero(data ?? {});
 }
-export function getAbout(): About {
-  return db.prepare('SELECT * FROM about WHERE id = 1').get() as About;
+export async function getAbout(): Promise<About> {
+  const { data } = await getSupabase().from('about').select('*').eq('id', 1).maybeSingle();
+  return toAbout(data ?? {});
 }
-export function getContact(): Contact {
-  return db.prepare('SELECT * FROM contact WHERE id = 1').get() as Contact;
+export async function getContact(): Promise<Contact> {
+  const { data } = await getSupabase().from('contact').select('*').eq('id', 1).maybeSingle();
+  return toContact(data ?? {});
 }
-export function getMarquee(): { m1: string; m2: string } {
-  return db.prepare('SELECT m1, m2 FROM marquee WHERE id = 1').get() as {
-    m1: string;
-    m2: string;
-  };
+export async function getMarquee(): Promise<{ m1: string; m2: string }> {
+  const { data } = await getSupabase().from('marquee').select('m1, m2').eq('id', 1).maybeSingle();
+  return { m1: data?.m1 ?? '', m2: data?.m2 ?? '' };
 }
 
 // ---------- collections ----------
-export function getStats(includeHidden = false): Stat[] {
-  const sql = includeHidden
-    ? 'SELECT * FROM stats ORDER BY id'
-    : 'SELECT * FROM stats WHERE visible = 1 ORDER BY id';
-  return db.prepare(sql).all() as Stat[];
+export async function getStats(includeHidden = false): Promise<Stat[]> {
+  let q = getSupabase().from('stats').select('*');
+  if (!includeHidden) q = q.eq('visible', true);
+  const { data } = await q.order('id', { ascending: true });
+  return (data ?? []).map(toStat);
 }
-export function getCurrently(includeHidden = false): CurrentlyItem[] {
-  const sql = includeHidden
-    ? 'SELECT * FROM currently_items ORDER BY "order", id'
-    : 'SELECT * FROM currently_items WHERE visible = 1 ORDER BY "order", id';
-  return db.prepare(sql).all() as CurrentlyItem[];
+export async function getCurrently(includeHidden = false): Promise<CurrentlyItem[]> {
+  let q = getSupabase().from('currently_items').select('*');
+  if (!includeHidden) q = q.eq('visible', true);
+  const { data } = await q.order('display_order', { ascending: true }).order('id', { ascending: true });
+  return (data ?? []).map(toCurrently);
 }
-export function getProjects(includeHidden = false): Project[] {
-  const sql = includeHidden
-    ? 'SELECT * FROM projects ORDER BY "order", id'
-    : 'SELECT * FROM projects WHERE visible = 1 ORDER BY "order", id';
-  return db.prepare(sql).all() as Project[];
+export async function getProjects(includeHidden = false): Promise<Project[]> {
+  let q = getSupabase().from('projects').select('*');
+  if (!includeHidden) q = q.eq('visible', true);
+  const { data } = await q.order('display_order', { ascending: true }).order('id', { ascending: true });
+  return (data ?? []).map(toProject);
 }
-export function getProjectBySlug(slug: string): Project | undefined {
-  return db.prepare('SELECT * FROM projects WHERE slug = ?').get(slug) as
-    | Project
-    | undefined;
+export async function getProjectBySlug(slug: string): Promise<Project | undefined> {
+  const { data } = await getSupabase().from('projects').select('*').eq('slug', slug).maybeSingle();
+  return data ? toProject(data) : undefined;
 }
-export function getAchievements(includeHidden = false): Achievement[] {
-  const sql = includeHidden
-    ? 'SELECT * FROM achievements ORDER BY "order", id'
-    : 'SELECT * FROM achievements WHERE visible = 1 ORDER BY "order", id';
-  return db.prepare(sql).all() as Achievement[];
+export async function getAchievements(includeHidden = false): Promise<Achievement[]> {
+  let q = getSupabase().from('achievements').select('*');
+  if (!includeHidden) q = q.eq('visible', true);
+  const { data } = await q.order('display_order', { ascending: true }).order('id', { ascending: true });
+  return (data ?? []).map(toAchievement);
 }
-export function getContentItems(includeHidden = false): ContentItem[] {
-  const sql = includeHidden
-    ? 'SELECT * FROM content_items ORDER BY "order", id'
-    : 'SELECT * FROM content_items WHERE visible = 1 ORDER BY "order", id';
-  return db.prepare(sql).all() as ContentItem[];
+export async function getContentItems(includeHidden = false): Promise<ContentItem[]> {
+  let q = getSupabase().from('content_items').select('*');
+  if (!includeHidden) q = q.eq('visible', true);
+  const { data } = await q.order('display_order', { ascending: true }).order('id', { ascending: true });
+  return (data ?? []).map(toContentItem);
 }
-export function getContactLinks(includeHidden = false): ContactLink[] {
-  const sql = includeHidden
-    ? 'SELECT * FROM contact_links ORDER BY "order", id'
-    : 'SELECT * FROM contact_links WHERE visible = 1 ORDER BY "order", id';
-  return db.prepare(sql).all() as ContactLink[];
+export async function getContactLinks(includeHidden = false): Promise<ContactLink[]> {
+  let q = getSupabase().from('contact_links').select('*');
+  if (!includeHidden) q = q.eq('visible', true);
+  const { data } = await q.order('display_order', { ascending: true }).order('id', { ascending: true });
+  return (data ?? []).map(toContactLink);
 }
 
 // ---------- public aggregate ----------
-export function getPublicData(): PublicData {
+export async function getPublicData(): Promise<PublicData> {
+  const [site, hero, about, contact, marquee, stats, currently, projects, achievements, contentItems, contactLinks] =
+    await Promise.all([
+      getSite(),
+      getHero(),
+      getAbout(),
+      getContact(),
+      getMarquee(),
+      getStats(false),
+      getCurrently(false),
+      getProjects(false),
+      getAchievements(false),
+      getContentItems(false),
+      getContactLinks(false),
+    ]);
   return {
-    site: getSite(),
-    hero: getHero(),
-    about: getAbout(),
-    stats: getStats(false),
-    currently: getCurrently(false),
-    projects: getProjects(false),
-    achievements: getAchievements(false),
-    contentItems: getContentItems(false),
-    contact: getContact(),
-    contactLinks: getContactLinks(false),
-    marquee1: getMarquee().m1.split(' / ').map((s) => s.trim()).filter(Boolean),
-    marquee2: getMarquee().m2.split('✶').map((s) => s.trim()).filter(Boolean),
+    site,
+    hero,
+    about,
+    stats,
+    currently,
+    projects,
+    achievements,
+    contentItems,
+    contact,
+    contactLinks,
+    marquee1: marquee.m1.split(' / ').map((s) => s.trim()).filter(Boolean),
+    marquee2: marquee.m2.split('✶').map((s) => s.trim()).filter(Boolean),
   };
 }
 
@@ -127,29 +237,42 @@ export interface AdminData {
   contactLinks: ContactLink[];
 }
 
-export function getAdminData(): AdminData {
+export async function getAdminData(): Promise<AdminData> {
+  const [site, hero, about, contact, marquee, stats, currently, projects, achievements, contentItems, contactLinks] =
+    await Promise.all([
+      getSite(),
+      getHero(),
+      getAbout(),
+      getContact(),
+      getMarquee(),
+      getStats(true),
+      getCurrently(true),
+      getProjects(true),
+      getAchievements(true),
+      getContentItems(true),
+      getContactLinks(true),
+    ]);
   return {
-    site: getSite(),
-    hero: getHero(),
-    about: getAbout(),
-    contact: getContact(),
-    marquee: getMarquee(),
-    stats: getStats(true),
-    currently: getCurrently(true),
-    projects: getProjects(true),
-    achievements: getAchievements(true),
-    contentItems: getContentItems(true),
-    contactLinks: getContactLinks(true),
+    site,
+    hero,
+    about,
+    contact,
+    marquee,
+    stats,
+    currently,
+    projects,
+    achievements,
+    contentItems,
+    contactLinks,
   };
 }
 
 // ---------- generic singleton update ----------
-function updateSingleton(table: string, patch: Record<string, unknown>) {
+async function updateSingleton(table: string, patch: Record<string, unknown>) {
   const keys = Object.keys(patch).filter((k) => k !== 'id');
   if (keys.length === 0) return;
-  const set = keys.map((k) => `"${k}" = @${k}`).join(', ');
-  const sql = `UPDATE ${table} SET ${set} WHERE id = 1`;
-  db.prepare(sql).run(patch);
+  const clean = toSnake(patch);
+  await getSupabase().from(table).update(clean).eq('id', 1);
 }
 
 export const updateSite = (p: Record<string, unknown>) => updateSingleton('site', p);
@@ -158,168 +281,154 @@ export const updateAbout = (p: Record<string, unknown>) => updateSingleton('abou
 export const updateContact = (p: Record<string, unknown>) => updateSingleton('contact', p);
 export const updateMarquee = (p: Record<string, unknown>) => updateSingleton('marquee', p);
 
+// ---------- next display_order for a collection ----------
+async function nextOrder(table: string): Promise<number> {
+  const { data } = await getSupabase()
+    .from(table)
+    .select('display_order')
+    .order('display_order', { ascending: false })
+    .limit(1);
+  return (data?.[0]?.display_order ?? -1) + 1;
+}
+
 // ---------- generic collection CRUD ----------
-function insertRow(table: string, cols: string[], row: Record<string, unknown>) {
-  const cols2 = cols.map((c) => `"${c}"`).join(', ');
-  const ph = cols.map((c) => `@${c}`).join(', ');
-  const info = db
-    .prepare(`INSERT INTO ${table} (${cols2}) VALUES (${ph})`)
-    .run(row);
-  return Number(info.lastInsertRowid);
+async function insertRow(table: string, payload: Record<string, unknown>): Promise<number> {
+  const { data, error } = await getSupabase().from(table).insert(payload).select('id').single();
+  if (error) throw new Error(error.message);
+  return (data as { id: number }).id;
 }
-function updateRow(table: string, cols: string[], row: Record<string, unknown>) {
-  const set = cols.map((c) => `"${c}" = @${c}`).join(', ');
-  db.prepare(`UPDATE ${table} SET ${set} WHERE id = @id`).run(row);
+async function updateRow(table: string, payload: Record<string, unknown>, id: number) {
+  const { error } = await getSupabase().from(table).update(payload).eq('id', id);
+  if (error) throw new Error(error.message);
 }
-function deleteRow(table: string, id: number) {
-  db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(id);
+async function deleteRow(table: string, id: number) {
+  const { error } = await getSupabase().from(table).delete().eq('id', id);
+  if (error) throw new Error(error.message);
 }
 
 // stats
-export const createStat = (v: Partial<Stat>) =>
-  insertRow('stats', ['value', 'suffix', 'label', 'visible'], {
-    value: num(v.value),
-    suffix: str(v.suffix),
-    label: str(v.label),
-    visible: boolToNum(v.visible ?? true),
-  });
-export const updateStat = (v: Stat) =>
-  updateRow('stats', ['value', 'suffix', 'label', 'visible'], {
-    id: num(v.id),
-    value: num(v.value),
-    suffix: str(v.suffix),
-    label: str(v.label),
-    visible: boolToNum(v.visible),
-  });
+export const createStat = (v: Partial<Stat>) => insertRow('stats', {
+  value: num(v.value),
+  suffix: str(v.suffix),
+  label: str(v.label),
+  visible: boolDb(v.visible),
+});
+export const updateStat = (v: Stat) => updateRow('stats', {
+  value: num(v.value),
+  suffix: str(v.suffix),
+  label: str(v.label),
+  visible: boolDb(v.visible),
+}, num(v.id));
 export const deleteStat = (id: number) => deleteRow('stats', id);
 
 // currently_items
-export const createCurrently = (v: Partial<CurrentlyItem>) => {
-  const max = (db.prepare('SELECT MAX("order") AS m FROM currently_items').get() as { m: number | null })
-    .m;
-  return insertRow('currently_items', ['text', 'sub', 'visible', 'order'], {
+export async function createCurrently(v: Partial<CurrentlyItem>): Promise<number> {
+  const order = v.order != null ? num(v.order) : await nextOrder('currently_items');
+  return insertRow('currently_items', {
     text: str(v.text),
     sub: str(v.sub),
-    visible: boolToNum(v.visible ?? true),
-    order: max == null ? 0 : max + 1,
+    visible: boolDb(v.visible),
+    display_order: order,
   });
-};
-export const updateCurrently = (v: CurrentlyItem) =>
-  updateRow('currently_items', ['text', 'sub', 'visible', 'order'], {
-    id: num(v.id),
-    text: str(v.text),
-    sub: str(v.sub),
-    visible: boolToNum(v.visible),
-    order: num(v.order),
-  });
+}
+export const updateCurrently = (v: CurrentlyItem) => updateRow('currently_items', {
+  text: str(v.text),
+  sub: str(v.sub),
+  visible: boolDb(v.visible),
+  display_order: num(v.order),
+}, num(v.id));
 export const deleteCurrently = (id: number) => deleteRow('currently_items', id);
 
 // projects
-export const createProject = (v: Partial<Project>) =>
-  insertRow(
-    'projects',
-    ['slug', 'title', 'tags', 'description', 'image', 'link', 'year', 'visible', 'order'],
-    {
-      slug: str(v.slug),
-      title: str(v.title),
-      tags: str(v.tags, '[]'),
-      description: str(v.description),
-      image: str(v.image),
-      link: str(v.link),
-      year: str(v.year),
-      visible: boolToNum(v.visible ?? true),
-      order: num(v.order),
-    }
-  );
-export const updateProject = (v: Project) =>
-  updateRow(
-    'projects',
-    ['slug', 'title', 'tags', 'description', 'image', 'link', 'year', 'visible', 'order'],
-    {
-      id: num(v.id),
-      slug: str(v.slug),
-      title: str(v.title),
-      tags: str(v.tags, '[]'),
-      description: str(v.description),
-      image: str(v.image),
-      link: str(v.link),
-      year: str(v.year),
-      visible: boolToNum(v.visible),
-      order: num(v.order),
-    }
-  );
+export async function createProject(v: Partial<Project>): Promise<number> {
+  const order = v.order != null ? num(v.order) : await nextOrder('projects');
+  return insertRow('projects', {
+    slug: str(v.slug),
+    title: str(v.title),
+    tags: str(v.tags, '[]'),
+    description: str(v.description),
+    image: str(v.image),
+    link: str(v.link),
+    year: str(v.year),
+    visible: boolDb(v.visible),
+    display_order: order,
+  });
+}
+export const updateProject = (v: Project) => updateRow('projects', {
+  slug: str(v.slug),
+  title: str(v.title),
+  tags: str(v.tags, '[]'),
+  description: str(v.description),
+  image: str(v.image),
+  link: str(v.link),
+  year: str(v.year),
+  visible: boolDb(v.visible),
+  display_order: num(v.order),
+}, num(v.id));
 export const deleteProject = (id: number) => deleteRow('projects', id);
 
 // achievements
-export const createAchievement = (v: Partial<Achievement>) =>
-  insertRow('achievements', ['year', 'title', 'description', 'visible', 'order'], {
+export async function createAchievement(v: Partial<Achievement>): Promise<number> {
+  const order = v.order != null ? num(v.order) : await nextOrder('achievements');
+  return insertRow('achievements', {
     year: str(v.year),
     title: str(v.title),
     description: str(v.description),
-    visible: boolToNum(v.visible ?? true),
-    order: num(v.order),
+    visible: boolDb(v.visible),
+    display_order: order,
   });
-export const updateAchievement = (v: Achievement) =>
-  updateRow('achievements', ['year', 'title', 'description', 'visible', 'order'], {
-    id: num(v.id),
-    year: str(v.year),
-    title: str(v.title),
-    description: str(v.description),
-    visible: boolToNum(v.visible),
-    order: num(v.order),
-  });
+}
+export const updateAchievement = (v: Achievement) => updateRow('achievements', {
+  year: str(v.year),
+  title: str(v.title),
+  description: str(v.description),
+  visible: boolDb(v.visible),
+  display_order: num(v.order),
+}, num(v.id));
 export const deleteAchievement = (id: number) => deleteRow('achievements', id);
 
 // content_items
-export const createContentItem = (v: Partial<ContentItem>) =>
-  insertRow(
-    'content_items',
-    ['platform', 'name', 'description', 'url', 'linkText', 'visible', 'order'],
-    {
-      platform: str(v.platform),
-      name: str(v.name),
-      description: str(v.description),
-      url: str(v.url),
-      linkText: str(v.linkText),
-      visible: boolToNum(v.visible ?? true),
-      order: num(v.order),
-    }
-  );
-export const updateContentItem = (v: ContentItem) =>
-  updateRow(
-    'content_items',
-    ['platform', 'name', 'description', 'url', 'linkText', 'visible', 'order'],
-    {
-      id: num(v.id),
-      platform: str(v.platform),
-      name: str(v.name),
-      description: str(v.description),
-      url: str(v.url),
-      linkText: str(v.linkText),
-      visible: boolToNum(v.visible),
-      order: num(v.order),
-    }
-  );
+export async function createContentItem(v: Partial<ContentItem>): Promise<number> {
+  const order = v.order != null ? num(v.order) : await nextOrder('content_items');
+  return insertRow('content_items', {
+    platform: str(v.platform),
+    name: str(v.name),
+    description: str(v.description),
+    url: str(v.url),
+    link_text: str(v.linkText, 'Open ↗'),
+    visible: boolDb(v.visible),
+    display_order: order,
+  });
+}
+export const updateContentItem = (v: ContentItem) => updateRow('content_items', {
+  platform: str(v.platform),
+  name: str(v.name),
+  description: str(v.description),
+  url: str(v.url),
+  link_text: str(v.linkText, 'Open ↗'),
+  visible: boolDb(v.visible),
+  display_order: num(v.order),
+}, num(v.id));
 export const deleteContentItem = (id: number) => deleteRow('content_items', id);
 
 // contact_links
-export const createContactLink = (v: Partial<ContactLink>) =>
-  insertRow('contact_links', ['label', 'value', 'url', 'visible', 'order'], {
+export async function createContactLink(v: Partial<ContactLink>): Promise<number> {
+  const order = v.order != null ? num(v.order) : await nextOrder('contact_links');
+  return insertRow('contact_links', {
     label: str(v.label),
     value: str(v.value),
     url: str(v.url),
-    visible: boolToNum(v.visible ?? true),
-    order: num(v.order),
+    visible: boolDb(v.visible),
+    display_order: order,
   });
-export const updateContactLink = (v: ContactLink) =>
-  updateRow('contact_links', ['label', 'value', 'url', 'visible', 'order'], {
-    id: num(v.id),
-    label: str(v.label),
-    value: str(v.value),
-    url: str(v.url),
-    visible: boolToNum(v.visible),
-    order: num(v.order),
-  });
+}
+export const updateContactLink = (v: ContactLink) => updateRow('contact_links', {
+  label: str(v.label),
+  value: str(v.value),
+  url: str(v.url),
+  visible: boolDb(v.visible),
+  display_order: num(v.order),
+}, num(v.id));
 export const deleteContactLink = (id: number) => deleteRow('contact_links', id);
 
 // ---------- reorder ----------
@@ -331,13 +440,12 @@ const REORDER_TABLES: Record<string, string> = {
   currently_items: 'currently_items',
 };
 
-export function reorder(collection: string, ids: number[]): boolean {
+export async function reorder(collection: string, ids: number[]): Promise<boolean> {
   const table = REORDER_TABLES[collection];
   if (!table) return false;
-  const stmt = db.prepare(`UPDATE ${table} SET "order" = ? WHERE id = ?`);
-  const tx = db.transaction((list: number[]) => {
-    list.forEach((id, i) => stmt.run(i, id));
-  });
-  tx(ids);
+  for (let i = 0; i < ids.length; i++) {
+    const { error } = await getSupabase().from(table).update({ display_order: i }).eq('id', ids[i]);
+    if (error) return false;
+  }
   return true;
 }

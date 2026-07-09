@@ -26,6 +26,6 @@ export async function PUT(req: Request) {
       return bad('Chips must be valid JSON');
     }
   }
-  updateHero(obj);
+  await updateHero(obj);
   return ok({ hero: obj });
 }

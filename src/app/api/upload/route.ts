@@ -1,14 +1,14 @@
-import { writeFile, mkdir } from 'node:fs/promises';
-import { join, extname } from 'node:path';
 import crypto from 'node:crypto';
+import { extname } from 'node:path';
 import { requireAuth, ok, bad } from '@/lib/api';
+import { getSupabase } from '@/lib/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
 const MAX_BYTES = 4 * 1024 * 1024; // 4MB
 const ALLOWED = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml'];
+const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || 'uploads';
 
 export async function POST(req: Request) {
   const guard = await requireAuth();
@@ -32,9 +32,17 @@ export async function POST(req: Request) {
 
   const ext = extname(file.name) || '.png';
   const safeName = crypto.randomUUID() + ext;
-  await mkdir(UPLOAD_DIR, { recursive: true });
   const bytes = Buffer.from(await file.arrayBuffer());
-  await writeFile(join(UPLOAD_DIR, safeName), bytes);
 
-  return ok({ url: `/uploads/${safeName}` });
+  const supabase = getSupabase();
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(safeName, bytes, { contentType: file.type, upsert: false });
+
+  if (error) {
+    return bad(`Upload failed: ${error.message}`, 500);
+  }
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(safeName);
+  return ok({ url: data.publicUrl });
 }

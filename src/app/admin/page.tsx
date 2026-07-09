@@ -9,8 +9,7 @@ export default async function AdminPage() {
   const loggedIn = await getSession();
   if (!loggedIn) redirect('/admin/login');
 
-  // getAdminData() seeds the DB on first call, so it always returns data.
-  const data = getAdminData();
+  const data = await getAdminData();
 
   return <AdminApp initial={data} />;
 }
