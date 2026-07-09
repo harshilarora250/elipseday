@@ -1,0 +1,30 @@
+# Render one-click deploy blueprint for the portfolio.
+# In the Render dashboard: New → Blueprint → connect this repo → Deploy.
+# The SQLite DB (data/portfolio.db) lives on the persistent disk below,
+# so your content survives redeploys. Admin creds are set as secret env vars.
+
+services:
+  - type: web
+    name: portfolio
+    runtime: node
+    plan: free
+    region: oregon # pick whatever is closest to you
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_SITE_URL
+        sync: false # set to your Render URL after first deploy
+      - key: ADMIN_USERNAME
+        sync: false # set in dashboard (e.g. "admin")
+      - key: ADMIN_PASSWORD
+        sync: false # set in dashboard — keep this secret
+      - key: SESSION_SECRET
+        sync: false # set in dashboard: `openssl rand -hex 32`
+    disks:
+      - name: data
+        mountPath: /data
+        sizeGB: 1
