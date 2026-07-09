@@ -6,25 +6,36 @@
 services:
   - type: web
     name: portfolio
-    runtime: node
+    env: node
     plan: free
-    region: oregon # pick whatever is closest to you
+    region: oregon
     branch: main
+
     buildCommand: npm install && npm run build
     startCommand: npm run start
+
     healthCheckPath: /
+
     envVars:
       - key: NODE_ENV
         value: production
+
       - key: NEXT_PUBLIC_SITE_URL
-        sync: false # set to your Render URL after first deploy
+          sync: false
+
       - key: ADMIN_USERNAME
-        sync: false # set in dashboard (e.g. "admin")
+        sync: false
+
       - key: ADMIN_PASSWORD
-        sync: false # set in dashboard — keep this secret
+        sync: false
+
       - key: SESSION_SECRET
-        sync: false # set in dashboard: `openssl rand -hex 32`
-    disks:
-      - name: data
-        mountPath: /data
-        sizeGB: 1
+        sync: false
+
+      - key: DB_PATH
+        value: /data/portfolio.db
+
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
