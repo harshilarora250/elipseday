@@ -30,6 +30,7 @@ export async function PUT(req: Request) {
     suffix: String(body.suffix ?? ''),
     label: String(body.label ?? ''),
     visible: body.visible !== false,
+    order: Number(body.order) || 0,
   });
   return ok({ stats: await getStats(true) });
 }

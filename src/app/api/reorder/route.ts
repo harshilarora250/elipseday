@@ -4,7 +4,7 @@ import { reorder } from '@/lib/content';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const VALID = ['projects', 'achievements', 'content_items', 'contact_links', 'currently_items'];
+const VALID = ['stats', 'projects', 'achievements', 'content_items', 'contact_links', 'currently_items'];
 
 export async function POST(req: Request) {
   const guard = await requireAuth();

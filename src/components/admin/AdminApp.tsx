@@ -186,13 +186,16 @@ export default function AdminApp({ initial }: { initial: AdminData }) {
       .filter((c) => c.id != null && c.id > 0)
       .map((c) => c.id as number);
     if (JSON.stringify(curSeq) !== JSON.stringify(oldSeq) && curSeq.length) {
-      await apiPut('/api/reorder', { collection: collMap[key], ids: curSeq });
+      await apiPost('/api/reorder', { collection: collMap[key], ids: curSeq });
     }
     // refresh from server response (each PUT returns the latest collection)
     const last = cur.find((c) => c.id != null && c.id > 0);
     if (last) {
       const res = await apiPut(`${base}/${last.id}`, stripInternal(last));
-      const arr = (res as Record<string, unknown>)[responseKey];
+      const obj = res as Record<string, unknown>;
+      // Routes return the collection under its own key (e.g. `projects`,
+      // `stats`) or under `items` — accept either so the saved snapshot refreshes.
+      const arr = obj[responseKey] ?? obj.items;
       if (Array.isArray(arr)) return arr as unknown[];
     }
     return null;
@@ -498,7 +501,7 @@ function StatsEditor({
   const change = (i: number, patch: Partial<Stat>) =>
     set(items.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
   const add = () =>
-    set([...items, { id: tmpId(), value: 0, suffix: '', label: 'New stat', visible: true }]);
+    set([...items, { id: tmpId(), value: 0, suffix: '', label: 'New stat', visible: true, order: items.length }]);
   const remove = (i: number) => set(items.filter((_, idx) => idx !== i));
   const move = (i: number, dir: -1 | 1) => {
     const j = i + dir;

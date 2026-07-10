@@ -40,6 +40,7 @@ export interface Stat {
   suffix: string;
   label: string;
   visible: boolean;
+  order: number;
 }
 
 export interface CurrentlyItem {

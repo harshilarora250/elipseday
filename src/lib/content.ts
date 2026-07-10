@@ -79,6 +79,7 @@ const toStat = (r: any): Stat => ({
   suffix: r.suffix,
   label: r.label,
   visible: !!r.visible,
+  order: r.display_order ?? 0,
 });
 const toCurrently = (r: any): CurrentlyItem => ({
   id: r.id,
@@ -152,7 +153,7 @@ export async function getMarquee(): Promise<{ m1: string; m2: string }> {
 export async function getStats(includeHidden = false): Promise<Stat[]> {
   let q = getSupabase().from('stats').select('*');
   if (!includeHidden) q = q.eq('visible', true);
-  const { data } = await q.order('id', { ascending: true });
+  const { data } = await q.order('display_order', { ascending: true }).order('id', { ascending: true });
   return (data ?? []).map(toStat);
 }
 export async function getCurrently(includeHidden = false): Promise<CurrentlyItem[]> {
@@ -433,6 +434,7 @@ export const deleteContactLink = (id: number) => deleteRow('contact_links', id);
 
 // ---------- reorder ----------
 const REORDER_TABLES: Record<string, string> = {
+  stats: 'stats',
   projects: 'projects',
   achievements: 'achievements',
   content_items: 'content_items',
