@@ -153,7 +153,18 @@ export async function getMarquee(): Promise<{ m1: string; m2: string }> {
 export async function getStats(includeHidden = false): Promise<Stat[]> {
   let q = getSupabase().from('stats').select('*');
   if (!includeHidden) q = q.eq('visible', true);
-  const { data } = await q.order('display_order', { ascending: true }).order('id', { ascending: true });
+  // Order by display_order when available (supports admin reorder). Older
+  // deployments may not have that column yet — fall back to id ordering so the
+  // section still loads instead of erroring out to an empty list.
+  const { data, error } = await q
+    .order('display_order', { ascending: true })
+    .order('id', { ascending: true });
+  if (error && /display_order/i.test(error.message)) {
+    const fb = getSupabase().from('stats').select('*');
+    if (!includeHidden) fb.eq('visible', true);
+    const { data: d2 } = await fb.order('id', { ascending: true });
+    return (d2 ?? []).map(toStat);
+  }
   return (data ?? []).map(toStat);
 }
 export async function getCurrently(includeHidden = false): Promise<CurrentlyItem[]> {
