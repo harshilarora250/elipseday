@@ -1,86 +1,155 @@
-import { getPublicData } from '@/lib/content';
-import Nav from '@/components/Nav';
-import RevealObserver from '@/components/Reveal';
-import Marquee from '@/components/Marquee';
-import Hero from '@/components/sections/Hero';
-import About from '@/components/sections/About';
-import Projects from '@/components/sections/Projects';
-import Achievements from '@/components/sections/Achievements';
-import Content from '@/components/sections/Content';
-import Contact from '@/components/sections/Contact';
-import Footer from '@/components/sections/Footer';
-import { Wave } from '@/components/Decor';
+import { portfolio } from '@/lib/portfolio';
 
-export const dynamic = 'force-dynamic'; // always reflect latest admin edits
-
-const NAV_LINKS = [
+const leftNavigation = [
+  { label: 'Work', href: '#work' },
   { label: 'About', href: '#about' },
-  { label: 'Projects', href: '#projects' },
-  { label: 'Wins', href: '#achievements' },
-  { label: 'Content', href: '#content' },
-  { label: 'Contact', href: '#contact' },
 ];
 
-export default async function Home() {
-  const data = await getPublicData();
-
-  const metaItems = [
-    { label: 'Based in', value: 'The Internet' },
-    { label: 'Currently', value: data.currently[0]?.text || '—' },
-    { label: 'Status', value: data.hero.statusText || 'Available' },
-  ];
-
+export default function Home() {
   return (
     <>
-      <RevealObserver />
-      <Nav
-        statusText={data.site.statusText}
-        ctaText={data.site.navCtaText}
-        links={NAV_LINKS}
-      />
+      <a className="skip-link" href="#main">Skip to content</a>
 
-      <main>
-        <Hero hero={data.hero} metaItems={metaItems} />
+      <header className="site-header page-gutter">
+        <nav className="header-links header-links-left" aria-label="Main navigation">
+          {leftNavigation.map((item) => (
+            <a className="nav-pill" href={item.href} key={item.href}>{item.label}</a>
+          ))}
+        </nav>
+        <a className="wordmark" href="#top" aria-label={`${portfolio.name}, home`}>
+          {portfolio.name}
+        </a>
+        <nav className="header-links header-links-right" aria-label="Contact navigation">
+          <a className="nav-pill nav-pill-primary" href="#contact">Contact</a>
+        </nav>
+      </header>
 
-        {data.marquee1.length > 0 && (
-          <Marquee items={data.marquee1} variant="m1" dot="/" />
-        )}
-        {data.marquee2.length > 0 && (
-          <Marquee items={data.marquee2} variant="m2" dot="✶" />
-        )}
+      <main id="main">
+        <section className="hero page-gutter" id="top" aria-labelledby="hero-title">
+          <div className="hero-topline">
+            <span>{portfolio.role}</span>
+            <span>{portfolio.location}</span>
+          </div>
 
-        <About
-          about={data.about}
-          stats={data.stats}
-          currently={data.currently}
-        />
+          <h1 id="hero-title">{portfolio.name}</h1>
 
-        {data.projects.length > 0 && (
-          <>
-            <div className="checker" aria-hidden="true" />
-            <Projects projects={data.projects} />
-          </>
-        )}
+          <div className="hero-bottom">
+            <p className="hero-statement">{portfolio.heroStatement}</p>
+            <a className="text-link" href="#work">
+              Explore selected work <span aria-hidden="true">↓</span>
+            </a>
+          </div>
+        </section>
 
-        {data.achievements.length > 0 && (
-          <>
-            <Wave bg="var(--lavender)" fill="var(--yellow)" variant="curve1" />
-            <Achievements items={data.achievements} />
-          </>
-        )}
+        <section className="work section-gutter" id="work" aria-labelledby="work-title">
+          <div className="section-heading">
+            <p className="eyebrow">01 / Selected work</p>
+            <h2 id="work-title">Things in motion.</h2>
+          </div>
 
-        {data.contentItems.length > 0 && (
-          <>
-            <Wave bg="var(--yellow)" fill="var(--mint)" variant="zigzag" />
-            <Content items={data.contentItems} note={data.about.accent} />
-          </>
-        )}
+          <div className="project-list">
+            {portfolio.projects.map((project) => {
+              const content = (
+                <>
+                  <span className="project-number">{project.number}</span>
+                  <div className="project-main">
+                    <div className="project-title-row">
+                      <h3>{project.name}</h3>
+                      <span className="project-arrow" aria-hidden="true">↗</span>
+                    </div>
+                    <p className="project-description">{project.description}</p>
+                    <ul className="tag-list" aria-label="Project topics">
+                      {project.tags.map((tag) => <li key={tag}>{tag}</li>)}
+                    </ul>
+                  </div>
+                  <div className="project-meta">
+                    <span>{project.type}</span>
+                    <span>{project.year}</span>
+                  </div>
+                </>
+              );
 
-        <Wave bg="var(--mint)" fill="var(--dark)" variant="curve2" />
-        <Contact contact={data.contact} links={data.contactLinks} />
+              return project.href ? (
+                <a
+                  className="project-row project-row-link"
+                  href={project.href}
+                  key={project.number}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`${project.name}: ${project.linkLabel}`}
+                >
+                  {content}
+                </a>
+              ) : (
+                <article className="project-row" key={project.number}>
+                  {content}
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="about section-gutter" id="about" aria-labelledby="about-title">
+          <div className="section-heading">
+            <p className="eyebrow">02 / A little context</p>
+            <h2 id="about-title">A little about you.</h2>
+          </div>
+
+          <div className="about-grid">
+            <p className="about-lead">{portfolio.introduction}</p>
+            <div className="about-copy">
+              {portfolio.about.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+              <p className="now-line"><span className="now-dot" aria-hidden="true" /> Currently: {portfolio.current}</p>
+            </div>
+          </div>
+
+          <div className="milestones" aria-label="Selected milestones">
+            <p className="eyebrow">A few markers along the way</p>
+            {portfolio.milestones.map((milestone) => (
+              <div className="milestone" key={milestone.title}>
+                <span className="milestone-year">{milestone.year}</span>
+                <h3>{milestone.title}</h3>
+                <p>{milestone.detail}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="contact section-gutter" id="contact" aria-labelledby="contact-title">
+          <div className="contact-inner">
+            <p className="eyebrow">03 / Get in touch</p>
+            <h2 id="contact-title">Let’s start a<br /><em>conversation.</em></h2>
+            <p className="contact-copy">Replace this line with a short invitation to get in touch.</p>
+            <a className="contact-email" href={`mailto:${portfolio.email}`}>
+              {portfolio.email}<span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </section>
       </main>
 
-      <Footer site={data.site} links={data.contactLinks} />
+      <footer className="site-footer page-gutter">
+        <div className="footer-top">
+          <div>
+            <p className="eyebrow">Elsewhere</p>
+            <ul className="social-list">
+              {portfolio.socials.map((social) => (
+                <li key={social.label}>
+                  <a href={social.href} target="_blank" rel="noreferrer">
+                    <span>{social.label}</span><span>{social.value}</span><span aria-hidden="true">↗</span>
+                  </a>
+                </li>
+              ))}
+              <li><a href={`tel:${portfolio.phone}`}><span>Phone</span><span>{portfolio.phoneDisplay}</span><span aria-hidden="true">↗</span></a></li>
+            </ul>
+          </div>
+          <a className="back-to-top" href="#top">Back to top ↑</a>
+        </div>
+        <div className="footer-bottom">
+          <span>{portfolio.name}</span>
+          <span>{portfolio.location}</span>
+          <span>{portfolio.copyright}</span>
+        </div>
+      </footer>
     </>
   );
 }
