@@ -1,7 +1,7 @@
 export const portfolio = {
-  name: 'Your Name',
-  role: 'Your role · Your focus',
-  location: 'Your city, Country',
+  name: 'Harshil Arora',
+  role: 'Developer · Just building stuff',
+  location: 'Dubai, United Arab Emirates',
   heroStatement: 'Write a short sentence about what you do and the work you care about.',
   introduction:
     'Add a brief introduction here. Share who you are, what you do, and the kind of work you want to be known for.',
@@ -53,8 +53,8 @@ export const portfolio = {
     { label: 'Platform two', value: 'your-handle', href: 'https://example.com/social-two' },
     { label: 'Platform three', value: 'your-handle', href: 'https://example.com/social-three' },
   ],
-  email: 'hello@example.com',
-  phone: '+10000000000',
+  email: 'harora@elipseday.xyz',
+  phone: '+1000',
   phoneDisplay: '+1 000 000 0000',
-  copyright: '© 20XX Your Name',
+  copyright: '© 2026 Harshil Arora',
 };
