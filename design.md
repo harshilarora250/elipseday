@@ -2,7 +2,7 @@
 
 ## Direction
 
-Centered editorial minimalism: generous white space, compact confident type, quiet dividers, and direct language. Center the page sections. The wide top navigation is the single glass-like surface: a translucent white pill with a centered wordmark, controls at either end, a fine edge, blur, and a soft shadow. Avoid ornamental graphics, gradients, colored badges, and decorative motion.
+Centered editorial minimalism: generous white space, compact confident type, quiet dividers, and direct language. Center the page sections. The compact top navigation is the single glass-like surface: a translucent white pill with a centered wordmark, controls at either end, a fine edge, blur, and a soft shadow. Avoid ornamental graphics, gradients, colored badges, and decorative motion.
 
 ## Brand colors
 
@@ -29,6 +29,7 @@ Use black and white as the dominant pair. Gray values are supporting neutrals on
 
 - Use a consistent responsive page gutter and a maximum content width of `1440px`.
 - Center section content and separate it with space and thin neutral rules instead of cards.
-- Keep the navigation bar wide and rounded, with centered branding and navigation controls at its left and right edges.
+- Keep the navigation bar compact and rounded, with centered branding and navigation controls at its left and right edges.
+- Omit diagonal arrow icons. Use plain text links and subtle underline feedback for linked projects.
 - Use restrained transitions for links only. Preserve visible keyboard focus and honor `prefers-reduced-motion`.
 - Keep the layout responsive, readable, and usable without animation or client-side JavaScript.

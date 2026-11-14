@@ -55,7 +55,6 @@ export default function Home() {
                   <div className="project-main">
                     <div className="project-title-row">
                       <h3>{project.name}</h3>
-                      <span className="project-arrow" aria-hidden="true">↗</span>
                     </div>
                     <p className="project-description">{project.description}</p>
                     <ul className="tag-list" aria-label="Project topics">
@@ -121,7 +120,7 @@ export default function Home() {
             <h2 id="contact-title">Let’s start a<br /><em>conversation.</em></h2>
             <p className="contact-copy">Replace this line with a short invitation to get in touch.</p>
             <a className="contact-email" href={`mailto:${portfolio.email}`}>
-              {portfolio.email}<span aria-hidden="true">↗</span>
+              {portfolio.email}
             </a>
           </div>
         </section>
@@ -135,11 +134,11 @@ export default function Home() {
               {portfolio.socials.map((social) => (
                 <li key={social.label}>
                   <a href={social.href} target="_blank" rel="noreferrer">
-                    <span>{social.label}</span><span>{social.value}</span><span aria-hidden="true">↗</span>
+                    <span>{social.label}</span><span>{social.value}</span>
                   </a>
                 </li>
               ))}
-              <li><a href={`tel:${portfolio.phone}`}><span>Phone</span><span>{portfolio.phoneDisplay}</span><span aria-hidden="true">↗</span></a></li>
+              <li><a href={`tel:${portfolio.phone}`}><span>Phone</span><span>{portfolio.phoneDisplay}</span></a></li>
             </ul>
           </div>
           <a className="back-to-top" href="#top">Back to top ↑</a>
